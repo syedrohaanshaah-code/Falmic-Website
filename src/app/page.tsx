@@ -1,13 +1,13 @@
-import HeroSection from "@/components/ui/HeroSection";
-import StorySection from "@/components/ui/StorySection";
-import ServicesSection from "@/components/ui/ServicesSection";
-import PortfolioSection from "@/components/ui/PortfolioSection";
-import WorkflowSection from "@/components/ui/WorkflowSection";
-import TestimonialsSection from "@/components/ui/TestimonialsSection";
-import NewsSection from "@/components/ui/NewsSection";
-import ContactSection from "@/components/ui/ContactSection";
-import FAQSection from "@/components/ui/FAQSection";
-import Footer from "@/components/ui/Footer";
+import HeroSection from "@/components/Home/HeroSection";
+import StorySection from "@/components/Home/StorySection";
+import ServicesSection from "@/components/Home/ServicesSection";
+import PortfolioSection from "@/components/Home/PortfolioSection";
+import WorkflowSection from "@/components/Home/WorkflowSection";
+import TestimonialsSection from "@/components/Home/TestimonialsSection";
+import NewsSection from "@/components/Home/NewsSection";
+import ContactSection from "@/components/Home/ContactSection";
+import FAQSection from "@/components/Home/FAQSection";
+import Footer from "@/components/Home/Footer";
 
 export default function Home() {
   return (
