@@ -3,6 +3,7 @@ import ServicesListSection from "@/components/services/ServicesListSection";
 import TestimonialsSection from "@/components/Home/TestimonialsSection";
 import WorkflowSection from "@/components/Home/WorkflowSection";
 import ContactSection from "@/components/Home/ContactSection";
+import Footer from "@/components/Home/Footer";
 
 export default function ServicesPage() {
   return (
@@ -12,6 +13,7 @@ export default function ServicesPage() {
       <TestimonialsSection />
       <WorkflowSection />
       <ContactSection />
+      <Footer />
     </main>
   );
 }
