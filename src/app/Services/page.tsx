@@ -1,5 +1,5 @@
-import ServiceHero from "@/components/Services/ServiceHero";
-import ServicesListSection from "@/components/Services/ServicesListSection";
+import ServiceHero from "@/components/services/ServiceHero";
+import ServicesListSection from "@/components/services/ServicesListSection";
 import TestimonialsSection from "@/components/Home/TestimonialsSection";
 import WorkflowSection from "@/components/Home/WorkflowSection";
 import ContactSection from "@/components/Home/ContactSection";
