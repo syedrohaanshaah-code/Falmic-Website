@@ -3,26 +3,15 @@
 import { motion } from "framer-motion";
 import { ArrowRight, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { supabase } from "@/lib/supabase";
 
 const images = [
-  {
-    src: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=600&q=80",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=600&q=80",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=600&q=80",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&q=80",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600&q=80",
-  },
+  { src: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80" },
+  { src: "https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=600&q=80" },
+  { src: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=600&q=80" },
+  { src: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=600&q=80" },
+  { src: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&q=80" },
+  { src: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600&q=80" },
 ];
 
 const rotations = ["-6deg", "-2deg", "2deg", "6deg"];
@@ -31,6 +20,24 @@ export default function HeroSection() {
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [heroData, setHeroData] = useState({
+    heading_1: "Fal",
+    heading_2: "mic",
+    subtext: "We shape bold identities and digital experiences that make brands impossible to ignore.",
+    cta_text: "Get Started",
+    stat_1_value: "252+",
+    stat_1_label: "Project Completed",
+    stat_2_value: "75K+",
+    stat_2_label: "Trusted Agents",
+  });
+
+  useEffect(() => {
+    const fetchHero = async () => {
+      const { data } = await supabase.from("hero_content").select("*").single();
+      if (data) setHeroData(data);
+    };
+    fetchHero();
+  }, []);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -43,9 +50,7 @@ export default function HeroSection() {
     autoPlayRef.current = setInterval(() => {
       setCurrent((prev) => (prev + 1) % images.length);
     }, 3000);
-    return () => {
-      if (autoPlayRef.current) clearInterval(autoPlayRef.current);
-    };
+    return () => { if (autoPlayRef.current) clearInterval(autoPlayRef.current); };
   }, []);
 
   const prev = () => {
@@ -78,7 +83,7 @@ export default function HeroSection() {
         </span>
       </motion.div>
 
-      {/* Giant Name with embedded image */}
+      {/* Giant Name */}
       <div className="relative flex items-center justify-center w-full">
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
@@ -87,18 +92,14 @@ export default function HeroSection() {
           className="text-[clamp(5rem,18vw,17rem)] font-black leading-none tracking-tighter text-black text-center relative z-10 select-none"
         >
           <span className="relative inline-flex items-center">
-            <span>Fal</span>
+            <span>{heroData.heading_1}</span>
 
-            {/* Embedded tilted image */}
             <motion.div
               initial={{ opacity: 0, rotate: -15, scale: 0.8 }}
               animate={{ opacity: 1, rotate: -8, scale: 1 }}
               transition={{ duration: 0.9, delay: 0.3 }}
               className="inline-block relative mx-2 md:mx-4 align-middle"
-              style={{
-                width: "clamp(80px, 10vw, 180px)",
-                height: "clamp(80px, 10vw, 180px)",
-              }}
+              style={{ width: "clamp(80px, 10vw, 180px)", height: "clamp(80px, 10vw, 180px)" }}
             >
               <div className="w-full h-full rounded-2xl overflow-hidden border-4 border-white shadow-2xl">
                 <img
@@ -109,7 +110,7 @@ export default function HeroSection() {
               </div>
             </motion.div>
 
-            <span>mic</span>
+            <span>{heroData.heading_2}</span>
           </span>
         </motion.h1>
       </div>
@@ -121,8 +122,7 @@ export default function HeroSection() {
         transition={{ duration: 0.7, delay: 0.4 }}
         className="text-center text-gray-500 text-sm md:text-base max-w-xl mt-6 leading-relaxed"
       >
-        We shape bold identities and digital experiences that make brands
-        impossible to ignore. Trusted by companies worldwide.
+        {heroData.subtext}
       </motion.p>
 
       {/* CTA + Socials */}
@@ -136,7 +136,7 @@ export default function HeroSection() {
           href="/contact"
           className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#BEF264] text-black text-sm font-bold hover:bg-[#a8e050] transition-colors duration-200"
         >
-          Get Started
+          {heroData.cta_text}
           <ArrowRight size={16} />
         </a>
 
@@ -174,7 +174,6 @@ export default function HeroSection() {
         transition={{ duration: 0.9, delay: 0.6 }}
         className="relative w-full max-w-5xl mt-14"
       >
-        {/* Cards */}
         <div className={`flex ${isMobile ? "justify-center" : "items-end justify-center gap-4"}`}>
           {visibleImages.map((img, i) => (
             <motion.div
@@ -202,32 +201,17 @@ export default function HeroSection() {
 
         {/* Navigation */}
         <div className="flex items-center justify-center gap-4 mt-6">
-          <button
-            onClick={prev}
-            className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200"
-          >
+          <button onClick={prev} className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200">
             <ChevronLeft size={18} />
           </button>
-
-          {/* Dots */}
           <div className="flex gap-2">
             {images.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrent(i)}
-                className={`transition-all duration-300 rounded-full ${
-                  i === current
-                    ? "w-6 h-2.5 bg-black"
-                    : "w-2.5 h-2.5 bg-black/20"
-                }`}
+              <button key={i} onClick={() => setCurrent(i)}
+                className={`transition-all duration-300 rounded-full ${i === current ? "w-6 h-2.5 bg-black" : "w-2.5 h-2.5 bg-black/20"}`}
               />
             ))}
           </div>
-
-          <button
-            onClick={next}
-            className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200"
-          >
+          <button onClick={next} className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200">
             <ChevronRight size={18} />
           </button>
         </div>
