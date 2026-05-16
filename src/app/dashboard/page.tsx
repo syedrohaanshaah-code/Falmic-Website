@@ -10,9 +10,7 @@ import TestimonialsSection from "@/components/Dashboard/TestimonialsSection";
 import FAQSection from "@/components/Dashboard/FAQSection";
 import SiteSettingsSection from "@/components/Dashboard/SiteSettingsSection";
 
-const DASHBOARD_PASSWORD = process.env.NEXT_PUBLIC_DASHBOARD_PASSWORD || "falmic2024";
-
-  const USERS = [
+const USERS = [
   { username: "admin", password: "falmic2024", role: "admin" },
   { username: "arman", password: "armanfalmic", role: "editor" },
 ];
@@ -23,49 +21,63 @@ type User = {
   role: string;
 };
 
-const navItems = [
-  { id: "leads", label: "📧 Contact Leads" },
-  { id: "hero", label: "🏠 Hero Content" },
-  { id: "services", label: "⚙️ Services" },
-  { id: "portfolio", label: "🖼️ Portfolio" },
-  { id: "blog", label: "✍️ Blog" },
-  { id: "testimonials", label: "⭐ Testimonials" },
-  { id: "faq", label: "❓ FAQ" },
-  { id: "settings", label: "🔧 Site Settings" },
-];
-
 export default function DashboardPage() {
   const [authed, setAuthed] = useState(false);
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [wrongPass, setWrongPass] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeSection, setActiveSection] = useState("leads");
 
   const handleLogin = () => {
-    if (password === DASHBOARD_PASSWORD) {
+    const user = USERS.find(
+      (u) => u.username === username && u.password === password
+    );
+    if (user) {
+      setCurrentUser(user);
       setAuthed(true);
     } else {
       setWrongPass(true);
     }
   };
 
-
+  const navItems = [
+    { id: "leads", label: "📧 Contact Leads" },
+    { id: "hero", label: "🏠 Hero Content" },
+    { id: "services", label: "⚙️ Services" },
+    { id: "portfolio", label: "🖼️ Portfolio" },
+    { id: "blog", label: "✍️ Blog" },
+    { id: "testimonials", label: "⭐ Testimonials" },
+    { id: "faq", label: "❓ FAQ" },
+    ...(currentUser?.role === "admin"
+      ? [{ id: "settings", label: "🔧 Site Settings" }]
+      : []),
+  ];
 
   if (!authed) {
     return (
       <div className="min-h-screen bg-[#F5F5F3] flex items-center justify-center px-6">
         <div className="bg-white rounded-3xl p-10 w-full max-w-md shadow-sm border border-black/10">
           <h1 className="text-3xl font-black text-black mb-2">Falmic</h1>
-          <p className="text-sm text-gray-500 mb-8">CMS Dashboard — Enter password to continue</p>
+          <p className="text-sm text-gray-500 mb-8">CMS Dashboard — Login to continue</p>
           <div className="flex flex-col gap-4">
             <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => { setUsername(e.target.value); setWrongPass(false); }}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              className="w-full bg-[#F0F0EE] rounded-2xl px-5 py-4 text-sm outline-none focus:ring-2 focus:ring-[#BEF264] border border-transparent"
+            />
+            <input
               type="password"
-              placeholder="Enter password"
+              placeholder="Password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setWrongPass(false); }}
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
               className="w-full bg-[#F0F0EE] rounded-2xl px-5 py-4 text-sm outline-none focus:ring-2 focus:ring-[#BEF264] border border-transparent"
             />
-            {wrongPass && <p className="text-xs text-red-500">Incorrect password.</p>}
+            {wrongPass && <p className="text-xs text-red-500">Incorrect username or password.</p>}
             <button
               onClick={handleLogin}
               className="w-full py-4 rounded-2xl bg-[#BEF264] text-black font-bold text-sm hover:bg-[#a8e050] transition-colors"
@@ -80,15 +92,15 @@ export default function DashboardPage() {
 
   const renderSection = () => {
     switch (activeSection) {
-      case "leads": return <LeadsSection />;
+      case "leads": return <LeadsSection currentUser={currentUser} />;
       case "hero": return <HeroSection />;
       case "services": return <ServicesSection />;
       case "portfolio": return <PortfolioSection />;
       case "blog": return <BlogSection />;
       case "testimonials": return <TestimonialsSection />;
       case "faq": return <FAQSection />;
-      case "settings": return <SiteSettingsSection />;
-      default: return <LeadsSection />;
+      case "settings": return currentUser?.role === "admin" ? <SiteSettingsSection /> : <LeadsSection currentUser={currentUser} />;
+      default: return <LeadsSection currentUser={currentUser} />;
     }
   };
 
@@ -99,7 +111,9 @@ export default function DashboardPage() {
       <div className="w-64 bg-white border-r border-black/10 flex flex-col fixed h-full z-20">
         <div className="px-6 py-6 border-b border-black/10">
           <h1 className="text-xl font-black text-black">Falmic CMS</h1>
-          <p className="text-xs text-gray-400 mt-1">Content Management</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {currentUser?.username} · {currentUser?.role}
+          </p>
         </div>
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
           {navItems.map((item) => (
@@ -116,7 +130,7 @@ export default function DashboardPage() {
             </button>
           ))}
         </nav>
-        <div className="px-3 py-4 border-t border-black/10">
+        <div className="px-3 py-4 border-t border-black/10 flex flex-col gap-2">
           <a
             href="/"
             target="_blank"
@@ -124,6 +138,12 @@ export default function DashboardPage() {
           >
             View Live Site
           </a>
+          <button
+            onClick={() => { setAuthed(false); setCurrentUser(null); setUsername(""); setPassword(""); }}
+            className="w-full px-4 py-3 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 transition-colors"
+          >
+            Log Out
+          </button>
         </div>
       </div>
 
