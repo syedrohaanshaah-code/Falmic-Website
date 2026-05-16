@@ -20,13 +20,23 @@ type Contact = {
   status: string;
 };
 
+type User = {
+  username: string;
+  password: string;
+  role: string;
+};
+
+type Props = {
+  currentUser: User | null;
+};
+
 const statusColors: Record<string, string> = {
   new: "bg-blue-100 text-blue-700",
   in_progress: "bg-yellow-100 text-yellow-700",
   closed: "bg-green-100 text-green-700",
 };
 
-export default function LeadsSection() {
+export default function LeadsSection({ currentUser }: Props) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Contact | null>(null);
@@ -125,7 +135,12 @@ export default function LeadsSection() {
                   <h3 className="text-xl font-black text-black">{selected.full_name}</h3>
                   <p className="text-sm text-gray-500">{selected.company}</p>
                 </div>
-                <button onClick={() => deleteContact(selected.id)} className="px-3 py-1.5 rounded-full bg-red-50 text-red-500 text-xs font-bold hover:bg-red-100 transition-colors">Delete</button>
+                {/* Only admin can delete */}
+                {currentUser?.role === "admin" && (
+                  <button onClick={() => deleteContact(selected.id)} className="px-3 py-1.5 rounded-full bg-red-50 text-red-500 text-xs font-bold hover:bg-red-100 transition-colors">
+                    Delete
+                  </button>
+                )}
               </div>
               <div className="flex gap-2 mb-6">
                 {["new", "in_progress", "closed"].map((s) => (

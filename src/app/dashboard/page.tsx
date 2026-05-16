@@ -12,6 +12,17 @@ import SiteSettingsSection from "@/components/Dashboard/SiteSettingsSection";
 
 const DASHBOARD_PASSWORD = process.env.NEXT_PUBLIC_DASHBOARD_PASSWORD || "falmic2024";
 
+  const USERS = [
+  { username: "admin", password: "falmic2024", role: "admin" },
+  { username: "arman", password: "armanfalmic", role: "editor" },
+];
+
+type User = {
+  username: string;
+  password: string;
+  role: string;
+};
+
 const navItems = [
   { id: "leads", label: "📧 Contact Leads" },
   { id: "hero", label: "🏠 Hero Content" },
@@ -36,6 +47,8 @@ export default function DashboardPage() {
       setWrongPass(true);
     }
   };
+
+
 
   if (!authed) {
     return (
