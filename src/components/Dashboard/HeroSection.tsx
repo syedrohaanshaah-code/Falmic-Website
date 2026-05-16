@@ -65,24 +65,6 @@ export default function HeroSection() {
           <label className={labelClass}>CTA Button Text</label>
           <input name="cta_text" value={data.cta_text || ""} onChange={handleChange} className={inputClass} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-2">
-            <label className={labelClass}>Stat 1 Value</label>
-            <input name="stat_1_value" value={data.stat_1_value || ""} onChange={handleChange} className={inputClass} placeholder="252+" />
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className={labelClass}>Stat 1 Label</label>
-            <input name="stat_1_label" value={data.stat_1_label || ""} onChange={handleChange} className={inputClass} placeholder="Project Completed" />
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className={labelClass}>Stat 2 Value</label>
-            <input name="stat_2_value" value={data.stat_2_value || ""} onChange={handleChange} className={inputClass} placeholder="75K+" />
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className={labelClass}>Stat 2 Label</label>
-            <input name="stat_2_label" value={data.stat_2_label || ""} onChange={handleChange} className={inputClass} placeholder="Trusted Agents" />
-          </div>
-        </div>
       </div>
     </div>
   );
