@@ -5,36 +5,56 @@ import { ArrowRight, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
-const images = [
-  { src: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80" },
-  { src: "https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=600&q=80" },
-  { src: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=600&q=80" },
-  { src: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=600&q=80" },
-  { src: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&q=80" },
-  { src: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600&q=80" },
-];
-
 const rotations = ["-6deg", "-2deg", "2deg", "6deg"];
+
+type HeroData = {
+  label?: string;
+  heading_part1?: string;
+  heading_part2?: string;
+  heading_image_url?: string;
+  subtext?: string;
+  cta_text?: string;
+  cta_url?: string;
+  facebook_url?: string;
+  twitter_url?: string;
+  youtube_url?: string;
+  [key: string]: string | undefined;
+};
 
 export default function HeroSection() {
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [heroData, setHeroData] = useState({
-    heading_1: "Fal",
-    heading_2: "mic",
+  const [heroData, setHeroData] = useState<HeroData>({
+    label: "BUSINESS AGENCY",
+    heading_part1: "Fal",
+    heading_part2: "mic",
+    heading_image_url: "",
     subtext: "We shape bold identities and digital experiences that make brands impossible to ignore.",
     cta_text: "Get Started",
-    stat_1_value: "252+",
-    stat_1_label: "Project Completed",
-    stat_2_value: "75K+",
-    stat_2_label: "Trusted Agents",
+    cta_url: "/contact",
+    facebook_url: "#",
+    twitter_url: "#",
+    youtube_url: "#",
   });
+  const [carouselImages, setCarouselImages] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchHero = async () => {
       const { data } = await supabase.from("hero_content").select("*").single();
-      if (data) setHeroData(data);
+      if (data) {
+        setHeroData(data);
+        // Build carousel array from dynamic fields
+        const imgs: string[] = [];
+        let i = 1;
+        while (data[`carousel_image_${i}`]) {
+          imgs.push(data[`carousel_image_${i}`]);
+          i++;
+        }
+        // Fallback to unsplash if no carousel images uploaded yet
+        // REPLACE with:
+        setCarouselImages(imgs);
+      }
     };
     fetchHero();
   }, []);
@@ -47,25 +67,26 @@ export default function HeroSection() {
   }, []);
 
   useEffect(() => {
+    if (carouselImages.length === 0) return;
     autoPlayRef.current = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % images.length);
+      setCurrent((prev) => (prev + 1) % carouselImages.length);
     }, 3000);
     return () => { if (autoPlayRef.current) clearInterval(autoPlayRef.current); };
-  }, []);
+  }, [carouselImages]);
 
   const prev = () => {
     if (autoPlayRef.current) clearInterval(autoPlayRef.current);
-    setCurrent((p) => (p - 1 + images.length) % images.length);
+    setCurrent((p) => (p - 1 + carouselImages.length) % carouselImages.length);
   };
 
   const next = () => {
     if (autoPlayRef.current) clearInterval(autoPlayRef.current);
-    setCurrent((p) => (p + 1) % images.length);
+    setCurrent((p) => (p + 1) % carouselImages.length);
   };
 
   const visibleImages = isMobile
-    ? [images[current]]
-    : [0, 1, 2, 3].map((offset) => images[(current + offset) % images.length]);
+    ? [carouselImages[current]]
+    : [0, 1, 2, 3].map((offset) => carouselImages[(current + offset) % carouselImages.length]);
 
   return (
     <section className="relative min-h-screen bg-white overflow-hidden flex flex-col items-center justify-center px-6 pt-24">
@@ -79,11 +100,11 @@ export default function HeroSection() {
       >
         <span className="w-2.5 h-2.5 rounded-full bg-[#BEF264]" />
         <span className="text-xs font-bold tracking-[0.2em] uppercase text-black">
-          Business Agency
+          {heroData.label || "BUSINESS AGENCY"}
         </span>
       </motion.div>
 
-      {/* Giant Name */}
+      {/* Giant Heading */}
       <div className="relative flex items-center justify-center w-full">
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
@@ -92,25 +113,27 @@ export default function HeroSection() {
           className="text-[clamp(5rem,18vw,17rem)] font-black leading-none tracking-tighter text-black text-center relative z-10 select-none"
         >
           <span className="relative inline-flex items-center">
-            <span>{heroData.heading_1}</span>
-
-            <motion.div
-              initial={{ opacity: 0, rotate: -15, scale: 0.8 }}
-              animate={{ opacity: 1, rotate: -8, scale: 1 }}
-              transition={{ duration: 0.9, delay: 0.3 }}
-              className="inline-block relative mx-2 md:mx-4 align-middle"
-              style={{ width: "clamp(80px, 10vw, 180px)", height: "clamp(80px, 10vw, 180px)" }}
-            >
-              <div className="w-full h-full rounded-2xl overflow-hidden border-4 border-white shadow-2xl">
-                <img
-                  src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400&q=80"
-                  alt="Team"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </motion.div>
-
-            <span>{heroData.heading_2}</span>
+            <span>{heroData.heading_part1 || "Fal"}</span>
+            {heroData.heading_image_url && (
+              <motion.div
+                initial={{ opacity: 0, rotate: -15, scale: 0.8 }}
+                animate={{ opacity: 1, rotate: -8, scale: 1 }}
+                transition={{ duration: 0.9, delay: 0.3 }}
+                className="inline-block relative mx-2 md:mx-4 align-middle"
+                style={{ width: "clamp(80px, 10vw, 180px)", height: "clamp(80px, 10vw, 180px)" }}
+              >
+                <div className="w-full h-full rounded-2xl overflow-hidden border-4 border-white shadow-2xl">
+                  {heroData.heading_image_url && (
+                    <img
+                      src={heroData.heading_image_url}
+                      alt="Hero"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+              </motion.div>
+            )}
+            <span>{heroData.heading_part2 || "mic"}</span>
           </span>
         </motion.h1>
       </div>
@@ -133,31 +156,42 @@ export default function HeroSection() {
         className="flex items-center gap-4 mt-8"
       >
         <a
-          href="/contact"
+          href={heroData.cta_url || "/contact"}
           className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#BEF264] text-black text-sm font-bold hover:bg-[#a8e050] transition-colors duration-200"
         >
-          {heroData.cta_text}
+          {heroData.cta_text || "Get Started"}
           <ArrowRight size={16} />
         </a>
 
         {/* Facebook */}
-        <a href="#" aria-label="Facebook"
-          className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200"
-        >
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-          </svg>
-        </a>
+        {heroData.facebook_url && heroData.facebook_url !== "#" && (
+          <a href={heroData.facebook_url} aria-label="Facebook" target="_blank" rel="noreferrer"
+            className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200"
+          >
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+            </svg>
+          </a>
+        )}
+        {(!heroData.facebook_url || heroData.facebook_url === "#") && (
+          <a href="#" aria-label="Facebook"
+            className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200"
+          >
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+            </svg>
+          </a>
+        )}
 
         {/* X */}
-        <a href="#" aria-label="X"
+        <a href={heroData.twitter_url || "#"} aria-label="X" target="_blank" rel="noreferrer"
           className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200"
         >
           <X size={16} />
         </a>
 
         {/* YouTube */}
-        <a href="#" aria-label="YouTube"
+        <a href={heroData.youtube_url || "#"} aria-label="YouTube" target="_blank" rel="noreferrer"
           className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200"
         >
           <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
@@ -168,54 +202,58 @@ export default function HeroSection() {
       </motion.div>
 
       {/* Carousel */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.9, delay: 0.6 }}
-        className="relative w-full max-w-5xl mt-14"
-      >
-        <div className={`flex ${isMobile ? "justify-center" : "items-end justify-center gap-4"}`}>
-          {visibleImages.map((img, i) => (
-            <motion.div
-              key={img.src + i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: i * 0.08 }}
-              className="rounded-2xl overflow-hidden shadow-xl border-4 border-white flex-shrink-0"
-              style={{
-                transform: `rotate(${isMobile ? "0deg" : rotations[i]})`,
-                transformOrigin: "bottom center",
-                width: isMobile ? "90vw" : "calc(25% - 12px)",
-                maxWidth: isMobile ? "400px" : "280px",
-              }}
-            >
-              <img
-                src={img.src}
-                alt={`Agency ${i + 1}`}
-                className="w-full object-cover"
-                style={{ height: isMobile ? "260px" : "220px" }}
-              />
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Navigation */}
-        <div className="flex items-center justify-center gap-4 mt-6">
-          <button onClick={prev} className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200">
-            <ChevronLeft size={18} />
-          </button>
-          <div className="flex gap-2">
-            {images.map((_, i) => (
-              <button key={i} onClick={() => setCurrent(i)}
-                className={`transition-all duration-300 rounded-full ${i === current ? "w-6 h-2.5 bg-black" : "w-2.5 h-2.5 bg-black/20"}`}
-              />
+      {carouselImages.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.6 }}
+          className="relative w-full max-w-5xl mt-14"
+        >
+          <div className={`flex ${isMobile ? "justify-center" : "items-end justify-center gap-4"}`}>
+            {visibleImages.map((src, i) => (
+              src ? (
+                <motion.div
+                  key={src + i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: i * 0.08 }}
+                  className="rounded-2xl overflow-hidden shadow-xl border-4 border-white flex-shrink-0"
+                  style={{
+                    transform: `rotate(${isMobile ? "0deg" : rotations[i]})`,
+                    transformOrigin: "bottom center",
+                    width: isMobile ? "90vw" : "calc(25% - 12px)",
+                    maxWidth: isMobile ? "400px" : "280px",
+                  }}
+                >
+                  <img
+                    src={src}
+                    alt={`Agency ${i + 1}`}
+                    className="w-full object-cover"
+                    style={{ height: isMobile ? "260px" : "220px" }}
+                  />
+                </motion.div>
+              ) : null
             ))}
           </div>
-          <button onClick={next} className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200">
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      </motion.div>
+
+          {/* Navigation */}
+          <div className="flex items-center justify-center gap-4 mt-6">
+            <button onClick={prev} className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200">
+              <ChevronLeft size={18} />
+            </button>
+            <div className="flex gap-2">
+              {carouselImages.map((_, i) => (
+                <button key={i} onClick={() => setCurrent(i)}
+                  className={`transition-all duration-300 rounded-full ${i === current ? "w-6 h-2.5 bg-black" : "w-2.5 h-2.5 bg-black/20"}`}
+                />
+              ))}
+            </div>
+            <button onClick={next} className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200">
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </motion.div>
+      )}
 
     </section>
   );

@@ -8,81 +8,77 @@ import PortfolioSection from "@/components/Dashboard/PortfolioSection";
 import BlogSection from "@/components/Dashboard/BlogSection";
 import TestimonialsSection from "@/components/Dashboard/TestimonialsSection";
 import FAQSection from "@/components/Dashboard/FAQSection";
+import StorySection from "@/components/Dashboard/StorySection";
+import WorkflowSection from "@/components/Dashboard/WorkflowSection";
+import NewsSection from "@/components/Dashboard/NewsSection";
 import SiteSettingsSection from "@/components/Dashboard/SiteSettingsSection";
 
 const USERS = [
   { username: "admin", password: "falmic2024", role: "admin" },
-  { username: "arman", password: "armanfalmic", role: "editor" },
+  { username: "arman", password: "falmic2024", role: "admin" },
 ];
 
-type User = {
-  username: string;
-  password: string;
-  role: string;
-};
+type User = { username: string; password: string; role: string };
+
+const TABS = [
+  { id: "leads", label: "Leads" },
+  { id: "hero", label: "Hero" },
+  { id: "story", label: "Story" },
+  { id: "workflow", label: "Workflow" },
+  { id: "news", label: "News" },
+  { id: "services", label: "Services" },
+  { id: "portfolio", label: "Portfolio" },
+  { id: "blog", label: "Blog" },
+  { id: "testimonials", label: "Testimonials" },
+  { id: "faq", label: "FAQ" },
+  { id: "settings", label: "Site Settings" },
+];
 
 export default function DashboardPage() {
-  const [authed, setAuthed] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [wrongPass, setWrongPass] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [activeSection, setActiveSection] = useState("leads");
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("leads");
 
   const handleLogin = () => {
-    const user = USERS.find(
+    const found = USERS.find(
       (u) => u.username === username && u.password === password
     );
-    if (user) {
-      setCurrentUser(user);
-      setAuthed(true);
+    if (found) {
+      setUser(found);
+      setError("");
     } else {
-      setWrongPass(true);
+      setError("Invalid username or password.");
     }
   };
 
-  const navItems = [
-    { id: "leads", label: "📧 Contact Leads" },
-    { id: "hero", label: "🏠 Hero Content" },
-    { id: "services", label: "⚙️ Services" },
-    { id: "portfolio", label: "🖼️ Portfolio" },
-    { id: "blog", label: "✍️ Blog" },
-    { id: "testimonials", label: "⭐ Testimonials" },
-    { id: "faq", label: "❓ FAQ" },
-    ...(currentUser?.role === "admin"
-      ? [{ id: "settings", label: "🔧 Site Settings" }]
-      : []),
-  ];
-
-  if (!authed) {
+  if (!user) {
     return (
-      <div className="min-h-screen bg-[#F5F5F3] flex items-center justify-center px-6">
-        <div className="bg-white rounded-3xl p-10 w-full max-w-md shadow-sm border border-black/10">
-          <h1 className="text-3xl font-black text-black mb-2">Falmic</h1>
-          <p className="text-sm text-gray-500 mb-8">CMS Dashboard — Login to continue</p>
+      <div className="min-h-screen bg-[#F5F5F3] flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-sm">
+          <h1 className="text-2xl font-black mb-6 text-center">Falmic CMS</h1>
           <div className="flex flex-col gap-4">
             <input
-              type="text"
+              className="border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black"
               placeholder="Username"
               value={username}
-              onChange={(e) => { setUsername(e.target.value); setWrongPass(false); }}
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              className="w-full bg-[#F0F0EE] rounded-2xl px-5 py-4 text-sm outline-none focus:ring-2 focus:ring-[#BEF264] border border-transparent"
+              onChange={(e) => setUsername(e.target.value)}
             />
             <input
+              className="border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black"
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e) => { setPassword(e.target.value); setWrongPass(false); }}
+              onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              className="w-full bg-[#F0F0EE] rounded-2xl px-5 py-4 text-sm outline-none focus:ring-2 focus:ring-[#BEF264] border border-transparent"
             />
-            {wrongPass && <p className="text-xs text-red-500">Incorrect username or password.</p>}
+            {error && <p className="text-red-500 text-xs">{error}</p>}
             <button
               onClick={handleLogin}
-              className="w-full py-4 rounded-2xl bg-[#BEF264] text-black font-bold text-sm hover:bg-[#a8e050] transition-colors"
+              className="bg-black text-white rounded-xl py-3 font-bold hover:bg-gray-800 transition"
             >
-              Enter Dashboard
+              Login
             </button>
           </div>
         </div>
@@ -90,68 +86,50 @@ export default function DashboardPage() {
     );
   }
 
-  const renderSection = () => {
-    switch (activeSection) {
-      case "leads": return <LeadsSection currentUser={currentUser} />;
-      case "hero": return <HeroSection />;
-      case "services": return <ServicesSection />;
-      case "portfolio": return <PortfolioSection />;
-      case "blog": return <BlogSection />;
-      case "testimonials": return <TestimonialsSection />;
-      case "faq": return <FAQSection />;
-      case "settings": return currentUser?.role === "admin" ? <SiteSettingsSection /> : <LeadsSection currentUser={currentUser} />;
-      default: return <LeadsSection currentUser={currentUser} />;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#F5F5F3] flex">
-
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-black/10 flex flex-col fixed h-full z-20">
-        <div className="px-6 py-6 border-b border-black/10">
-          <h1 className="text-xl font-black text-black">Falmic CMS</h1>
-          <p className="text-xs text-gray-400 mt-1">
-            {currentUser?.username} · {currentUser?.role}
-          </p>
-        </div>
-        <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveSection(item.id)}
-              className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                activeSection === item.id
-                  ? "bg-[#BEF264] text-black font-bold"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-        <div className="px-3 py-4 border-t border-black/10 flex flex-col gap-2">
-          <a
-            href="/"
-            target="_blank"
-            className="w-full block text-center px-4 py-3 rounded-xl text-sm font-medium bg-black text-white hover:bg-gray-800 transition-colors"
-          >
-            View Live Site
-          </a>
+      <aside className="w-56 bg-black text-white flex flex-col py-8 px-4 gap-2 min-h-screen">
+        <h2 className="text-lg font-black mb-6 px-2">Falmic CMS</h2>
+        {TABS.map((tab) => (
           <button
-            onClick={() => { setAuthed(false); setCurrentUser(null); setUsername(""); setPassword(""); }}
-            className="w-full px-4 py-3 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 transition-colors"
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition ${activeTab === tab.id
+              ? "bg-[#BEF264] text-black"
+              : "hover:bg-white/10 text-white"
+              }`}
           >
-            Log Out
+            {tab.label}
+          </button>
+        ))}
+        <div className="mt-auto pt-6 border-t border-white/10">
+          <p className="text-xs text-white/50 px-2 mb-2">Logged in as</p>
+          <p className="text-sm font-bold px-2">{user.username}</p>
+          <button
+            onClick={() => setUser(null)}
+            className="mt-3 text-xs text-white/50 hover:text-white px-2 transition"
+          >
+            Logout
           </button>
         </div>
-      </div>
+      </aside>
 
-      {/* Main content */}
-      <div className="ml-64 flex-1 p-8">
-        {renderSection()}
-      </div>
-
+      {/* Content */}
+      {/* Content */}
+      <main className="flex-1 p-10 overflow-y-auto">
+        {activeTab === "leads" && <LeadsSection />}
+        {activeTab === "hero" && <HeroSection />}
+        {activeTab === "services" && <ServicesSection />}
+        {activeTab === "portfolio" && <PortfolioSection />}
+        {activeTab === "blog" && <BlogSection />}
+        {activeTab === "testimonials" && <TestimonialsSection />}
+        {activeTab === "faq" && <FAQSection />}
+        {activeTab === "story" && <StorySection />}
+        {activeTab === "workflow" && <WorkflowSection />}
+        {activeTab === "news" && <NewsSection />}
+        {activeTab === "settings" && <SiteSettingsSection />}
+      </main>
     </div>
   );
 }

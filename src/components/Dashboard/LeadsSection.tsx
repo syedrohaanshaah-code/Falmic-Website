@@ -27,7 +27,7 @@ type User = {
 };
 
 type Props = {
-  currentUser: User | null;
+  currentUser?: User | null;
 };
 
 const statusColors: Record<string, string> = {
