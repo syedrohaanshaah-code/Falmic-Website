@@ -1,8 +1,23 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function ContactHero() {
+  const [heading, setHeading] = useState("Contact Us");
+
+  useEffect(() => {
+    supabase
+      .from("contact_page_content")
+      .select("hero_heading")
+      .eq("id", 1)
+      .single()
+      .then(({ data }) => {
+        if (data?.hero_heading) setHeading(data.hero_heading);
+      });
+  }, []);
+
   return (
     <section className="bg-[#F5F5F3] px-6 md:px-16 lg:px-24 py-20">
       <div className="max-w-5xl mx-auto">
@@ -23,7 +38,7 @@ export default function ContactHero() {
               className="font-black tracking-tighter text-black text-center"
               style={{ fontSize: "7rem", lineHeight: 1 }}
             >
-              Contact Us
+              {heading}
             </h1>
           </div>
         </motion.div>
