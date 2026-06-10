@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
+import { fetchWithCache } from "@/lib/cms-cache";
 import { supabase } from "@/lib/supabase";
 
 export default function TestimonialsCTA() {
@@ -13,17 +14,17 @@ export default function TestimonialsCTA() {
   const [buttonText, setButtonText] = useState("Start Your Project");
 
   useEffect(() => {
-    supabase
-      .from("testimonials_page_content")
-      .select("cta_heading,cta_subtext,cta_button_text")
-      .eq("id", 1)
-      .single()
-      .then(({ data }) => {
-        if (data?.cta_heading) setHeading(data.cta_heading);
-        if (data?.cta_subtext) setSubtext(data.cta_subtext);
-        if (data?.cta_button_text) setButtonText(data.cta_button_text);
-      });
-  }, []);
+  fetchWithCache("testimonials_page", () =>
+    new Promise((resolve) => {
+      supabase.from("testimonials_page_content").select("*").eq("id", 1).single()
+        .then(({ data }) => resolve(data));
+    })
+  ).then((data: any) => {
+    if (data?.cta_heading) setHeading(data.cta_heading);
+    if (data?.cta_subtext) setSubtext(data.cta_subtext);
+    if (data?.cta_button_text) setButtonText(data.cta_button_text);
+  });
+}, []);
 
   return (
     <section className="bg-[#F5F5F3] px-6 md:px-16 lg:px-24 py-24">
@@ -33,7 +34,7 @@ export default function TestimonialsCTA() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
-          className="bg-black rounded-3xl px-10 md:px-20 py-16 flex flex-col md:flex-row items-center justify-between gap-8"
+          className="bg-black rounded-3xl px-10 md:px-20 py-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-8"
         >
           <h2
             className="font-black tracking-tighter text-white"
@@ -47,9 +48,7 @@ export default function TestimonialsCTA() {
             ))}
           </h2>
           <div className="flex flex-col gap-4 items-start md:items-end">
-            <p className="text-white/50 text-sm max-w-xs text-left md:text-right leading-relaxed">
-              {subtext}
-            </p>
+            <p className="text-white/50 text-sm max-w-xs text-left leading-relaxed">{subtext}</p>
             <a
               href="/contact"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-[#BEF264] text-black font-bold text-sm hover:bg-[#a8e050] transition-colors duration-200"

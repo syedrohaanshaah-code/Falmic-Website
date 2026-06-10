@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Upload } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { fetchWithCache } from "@/lib/cms-cache";
 
 type CmsData = Record<string, string>;
 type DropdownOption = { label: string; value: string };
@@ -96,16 +97,21 @@ export default function ContactForm() {
     "idle" | "loading" | "success" | "error"
   >("idle");
 
-  useEffect(() => {
-    supabase
-      .from("contact_page_content")
-      .select("*")
-      .eq("id", 1)
-      .single()
-      .then(({ data }) => {
-        if (data) setCms({ ...defaults, ...data });
-      });
-  }, []);
+useEffect(() => {
+  fetchWithCache("contact_page", () =>
+    new Promise((resolve) => {
+      supabase.from("contact_page_content").select("*").eq("id", 1).single()
+        .then(({ data }) => resolve(data));
+    })
+  ).then((data: any) => {
+    if (data) {
+      const cleaned = Object.fromEntries(
+        Object.entries(data).filter(([_, v]) => v !== null && v !== "")
+      ) as CmsData;
+      setCms((prev) => ({ ...prev, ...cleaned }));
+    }
+  });
+}, []);
 
   const handleChange = (
     e: React.ChangeEvent<

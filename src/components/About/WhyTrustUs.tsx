@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { fetchWithCache } from "@/lib/cms-cache";
 
 type Data = Record<string, string>;
 
@@ -20,10 +21,21 @@ export default function WhyTrustUs() {
     card_4_description: "Beautiful design means nothing if it doesn't convert. We measure success by the impact our work has on your business — from brand recognition to revenue growth.",
   });
 
-  useEffect(() => {
-    supabase.from("why_trust_content").select("*").eq("id", 1).single()
-      .then(({ data }) => { if (data) setD(data); });
-  }, []);
+useEffect(() => {
+  fetchWithCache("why_trust", () =>
+    new Promise((resolve) => {
+      supabase.from("why_trust_content").select("*").eq("id", 1).single()
+        .then(({ data }) => resolve(data));
+    })
+  ).then((data: any) => {
+    if (data) {
+      const cleaned = Object.fromEntries(
+        Object.entries(data).filter(([_, v]) => v !== null && v !== "")
+      ) as Record<string, string>;
+      setD((prev) => ({ ...prev, ...cleaned }));
+    }
+  });
+}, []);
 
   return (
     <section className="bg-[#F5F5F3] px-6 md:px-16 lg:px-24 py-20">

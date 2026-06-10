@@ -3,20 +3,21 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { fetchWithCache } from "@/lib/cms-cache";
 
 export default function ContactHero() {
   const [heading, setHeading] = useState("Contact Us");
 
-  useEffect(() => {
-    supabase
-      .from("contact_page_content")
-      .select("hero_heading")
-      .eq("id", 1)
-      .single()
-      .then(({ data }) => {
-        if (data?.hero_heading) setHeading(data.hero_heading);
-      });
-  }, []);
+useEffect(() => {
+  fetchWithCache("contact_page", () =>
+    new Promise((resolve) => {
+      supabase.from("contact_page_content").select("*").eq("id", 1).single()
+        .then(({ data }) => resolve(data));
+    })
+  ).then((data: any) => {
+    if (data?.hero_heading) setHeading(data.hero_heading);
+  });
+}, []);
 
   return (
     <section className="bg-[#F5F5F3] px-6 md:px-16 lg:px-24 py-20">

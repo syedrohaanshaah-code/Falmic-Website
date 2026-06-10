@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-
+import { fetchWithCache } from "@/lib/cms-cache";
 type StoryData = {
   heading?: string;
   card_title?: string;
@@ -23,10 +23,21 @@ export default function StorySection() {
     stat_3_value: "25+", stat_3_label: "Years Of Experience",
   });
 
-  useEffect(() => {
-    supabase.from("story_content").select("*").eq("id", 1).single()
-      .then(({ data }) => { if (data) setD(data); });
-  }, []);
+useEffect(() => {
+  fetchWithCache("about_story", () =>
+    new Promise((resolve) => {
+      supabase.from("story_content").select("*").eq("id", 1).single()
+        .then(({ data }) => resolve(data));
+    })
+  ).then((data: any) => {
+    if (data) {
+      const cleaned = Object.fromEntries(
+        Object.entries(data).filter(([_, v]) => v !== null && v !== "")
+      ) as StoryData;
+      setD((prev) => ({ ...prev, ...cleaned }));
+    }
+  });
+}, []);
 
   const stats = [
     { value: d.stat_1_value, label: d.stat_1_label, icon: true, size: "normal" },

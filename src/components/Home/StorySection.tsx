@@ -1,5 +1,6 @@
 "use client";
 
+import { fetchWithCache } from "@/lib/cms-cache";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -23,10 +24,21 @@ export default function StorySection() {
     stat_3_value: "25+", stat_3_label: "Years Of Experience",
   });
 
-  useEffect(() => {
-    supabase.from("story_content").select("*").eq("id", 1).single()
-      .then(({ data }) => { if (data) setD(data); });
-  }, []);
+useEffect(() => {
+  fetchWithCache("story_content", () =>
+    new Promise((resolve) => {
+      supabase.from("story_content").select("*").eq("id", 1).single()
+        .then(({ data }) => resolve(data));
+    })
+  ).then((data: any) => {
+    if (data) {
+      const cleaned = Object.fromEntries(
+        Object.entries(data).filter(([_, v]) => v !== null && v !== "")
+      ) as StoryData;
+      setD((prev) => ({ ...prev, ...cleaned }));
+    }
+  });
+}, []);
 
   const stats = [
     { value: d.stat_1_value, label: d.stat_1_label, icon: true, size: "normal" },
@@ -51,6 +63,8 @@ export default function StorySection() {
         <motion.div
           initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.2 }}
+          onClick={() => window.location.href = "/about"}
+          whileHover={{ scale: 1.02, boxShadow: "0 12px 40px rgba(190,242,100,0.4)" }}
           className="relative bg-[#BEF264] border border-black/10 rounded-3xl p-8 md:p-10 mb-6 md:w-2/3"
         >
           <h3 className="text-xl md:text-2xl font-black text-black mb-4">{d.card_title}</h3>

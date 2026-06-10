@@ -1,9 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { fetchWithCache } from "@/lib/cms-cache";
 
 const rotations = ["-6deg", "-2deg", "2deg", "6deg"];
 
@@ -21,42 +22,58 @@ type HeroData = {
   [key: string]: string | undefined;
 };
 
+const defaultHero: HeroData = {
+  label: "BUSINESS AGENCY",
+  heading_part1: "Fal",
+  heading_part2: "mic",
+  heading_image_url: "",
+  subtext: "We shape bold identities and digital experiences that make brands impossible to ignore.",
+  cta_text: "Get Started",
+  cta_url: "/contact",
+  facebook_url: "#",
+  twitter_url: "#",
+  youtube_url: "#",
+};
+
 export default function HeroSection() {
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState<Record<number, boolean>>({});
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [heroData, setHeroData] = useState<HeroData>({
-    label: "BUSINESS AGENCY",
-    heading_part1: "Fal",
-    heading_part2: "mic",
-    heading_image_url: "",
-    subtext: "We shape bold identities and digital experiences that make brands impossible to ignore.",
-    cta_text: "Get Started",
-    cta_url: "/contact",
-    facebook_url: "#",
-    twitter_url: "#",
-    youtube_url: "#",
-  });
+  const [heroData, setHeroData] = useState<HeroData>(defaultHero);
   const [carouselImages, setCarouselImages] = useState<string[]>([]);
 
+  // Fetch with cache
   useEffect(() => {
-    const fetchHero = async () => {
-      const { data } = await supabase.from("hero_content").select("*").single();
+    fetchWithCache("hero_content", () =>
+      new Promise((resolve) => {
+        supabase.from("hero_content").select("*").single()
+          .then(({ data }) => resolve(data));
+      })
+    ).then((data: any) => {
       if (data) {
-        setHeroData(data);
-        // Build carousel array from dynamic fields
+        const cleaned = Object.fromEntries(
+          Object.entries(data).filter(([_, v]) => v !== null && v !== "")
+        ) as HeroData;
+        setHeroData((prev) => ({ ...prev, ...cleaned }));
+
+        // Build carousel
         const imgs: string[] = [];
         let i = 1;
         while (data[`carousel_image_${i}`]) {
           imgs.push(data[`carousel_image_${i}`]);
           i++;
         }
-        // Fallback to unsplash if no carousel images uploaded yet
-        // REPLACE with:
         setCarouselImages(imgs);
+
+        // Preload all images immediately
+        imgs.forEach((src, idx) => {
+          const img = new Image();
+          img.onload = () => setImagesLoaded((prev) => ({ ...prev, [idx]: true }));
+          img.src = src;
+        });
       }
-    };
-    fetchHero();
+    });
   }, []);
 
   useEffect(() => {
@@ -66,6 +83,7 @@ export default function HeroSection() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  // Autoplay
   useEffect(() => {
     if (carouselImages.length === 0) return;
     autoPlayRef.current = setInterval(() => {
@@ -85,8 +103,11 @@ export default function HeroSection() {
   };
 
   const visibleImages = isMobile
-    ? [carouselImages[current]]
-    : [0, 1, 2, 3].map((offset) => carouselImages[(current + offset) % carouselImages.length]);
+    ? [{ src: carouselImages[current], index: current }]
+    : [0, 1, 2, 3].map((offset) => {
+        const index = (current + offset) % carouselImages.length;
+        return { src: carouselImages[index], index };
+      });
 
   return (
     <section className="relative min-h-screen bg-white overflow-hidden flex flex-col items-center justify-center px-6 pt-24">
@@ -100,7 +121,7 @@ export default function HeroSection() {
       >
         <span className="w-2.5 h-2.5 rounded-full bg-[#BEF264]" />
         <span className="text-xs font-bold tracking-[0.2em] uppercase text-black">
-          {heroData.label || "BUSINESS AGENCY"}
+          {heroData.label}
         </span>
       </motion.div>
 
@@ -113,7 +134,7 @@ export default function HeroSection() {
           className="text-[clamp(5rem,18vw,17rem)] font-black leading-none tracking-tighter text-black text-center relative z-10 select-none"
         >
           <span className="relative inline-flex items-center">
-            <span>{heroData.heading_part1 || "Fal"}</span>
+            <span>{heroData.heading_part1}</span>
             {heroData.heading_image_url && (
               <motion.div
                 initial={{ opacity: 0, rotate: -15, scale: 0.8 }}
@@ -123,17 +144,11 @@ export default function HeroSection() {
                 style={{ width: "clamp(80px, 10vw, 180px)", height: "clamp(80px, 10vw, 180px)" }}
               >
                 <div className="w-full h-full rounded-2xl overflow-hidden border-4 border-white shadow-2xl">
-                  {heroData.heading_image_url && (
-                    <img
-                      src={heroData.heading_image_url}
-                      alt="Hero"
-                      className="w-full h-full object-cover"
-                    />
-                  )}
+                  <img src={heroData.heading_image_url} alt="Hero" className="w-full h-full object-cover" />
                 </div>
               </motion.div>
             )}
-            <span>{heroData.heading_part2 || "mic"}</span>
+            <span>{heroData.heading_part2}</span>
           </span>
         </motion.h1>
       </div>
@@ -155,45 +170,22 @@ export default function HeroSection() {
         transition={{ duration: 0.7, delay: 0.5 }}
         className="flex items-center gap-4 mt-8"
       >
-        <a
-          href={heroData.cta_url || "/contact"}
-          className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#BEF264] text-black text-sm font-bold hover:bg-[#a8e050] transition-colors duration-200"
-        >
-          {heroData.cta_text || "Get Started"}
-          <ArrowRight size={16} />
+        <a href={heroData.cta_url || "/contact"}
+          className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#BEF264] text-black text-sm font-bold hover:bg-[#a8e050] transition-colors duration-200">
+          {heroData.cta_text} <ArrowRight size={16} />
         </a>
-
-        {/* Facebook */}
-        {heroData.facebook_url && heroData.facebook_url !== "#" && (
-          <a href={heroData.facebook_url} aria-label="Facebook" target="_blank" rel="noreferrer"
-            className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200"
-          >
-            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-            </svg>
-          </a>
-        )}
-        {(!heroData.facebook_url || heroData.facebook_url === "#") && (
-          <a href="#" aria-label="Facebook"
-            className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200"
-          >
-            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-            </svg>
-          </a>
-        )}
-
-        {/* X */}
+        <a href={heroData.facebook_url || "#"} aria-label="Facebook" target="_blank" rel="noreferrer"
+          className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+          </svg>
+        </a>
         <a href={heroData.twitter_url || "#"} aria-label="X" target="_blank" rel="noreferrer"
-          className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200"
-        >
+          className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200">
           <X size={16} />
         </a>
-
-        {/* YouTube */}
         <a href={heroData.youtube_url || "#"} aria-label="YouTube" target="_blank" rel="noreferrer"
-          className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200"
-        >
+          className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200">
           <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
             <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58a2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" />
             <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white" />
@@ -210,35 +202,38 @@ export default function HeroSection() {
           className="relative w-full max-w-5xl mt-14"
         >
           <div className={`flex ${isMobile ? "justify-center" : "items-end justify-center gap-4"}`}>
-            {visibleImages.map((src, i) => (
+            {visibleImages.map(({ src, index }, i) => (
               src ? (
-                <motion.div
-                  key={src + i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: i * 0.08 }}
+                <div
+                  key={index}
                   className="rounded-2xl overflow-hidden shadow-xl border-4 border-white flex-shrink-0"
                   style={{
                     transform: `rotate(${isMobile ? "0deg" : rotations[i]})`,
                     transformOrigin: "bottom center",
                     width: isMobile ? "90vw" : "calc(25% - 12px)",
                     maxWidth: isMobile ? "400px" : "280px",
+                    transition: "opacity 0.5s ease",
+                    opacity: imagesLoaded[index] ? 1 : 0,
                   }}
                 >
                   <img
                     src={src}
-                    alt={`Agency ${i + 1}`}
+                    alt={`Agency ${index + 1}`}
                     className="w-full object-cover"
-                    style={{ height: isMobile ? "260px" : "220px" }}
+                    style={{
+                      height: isMobile ? "260px" : "220px",
+                      transition: "opacity 0.5s ease",
+                    }}
                   />
-                </motion.div>
+                </div>
               ) : null
             ))}
           </div>
 
           {/* Navigation */}
           <div className="flex items-center justify-center gap-4 mt-6">
-            <button onClick={prev} className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200">
+            <button onClick={prev}
+              className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200">
               <ChevronLeft size={18} />
             </button>
             <div className="flex gap-2">
@@ -248,7 +243,8 @@ export default function HeroSection() {
                 />
               ))}
             </div>
-            <button onClick={next} className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200">
+            <button onClick={next}
+              className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-200">
               <ChevronRight size={18} />
             </button>
           </div>

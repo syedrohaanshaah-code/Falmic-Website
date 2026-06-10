@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-
+import { fetchWithCache } from "@/lib/cms-cache";
 type ServiceItem = {
   number: string;
   title: string;
@@ -61,23 +61,23 @@ export default function ServicesListSection() {
   const [heading, setHeading] = useState("Services That\nElevate Your Brand");
   const [services, setServices] = useState<ServiceItem[]>(fallback);
 
-  useEffect(() => {
-    supabase
-      .from("services_content")
-      .select("*")
-      .eq("id", 1)
-      .single()
-      .then(({ data }) => {
-        if (!data) return;
-        if (data.section_heading) setHeading(data.section_heading);
-        const list: ServiceItem[] = [];
-        for (let n = 1; n <= 4; n++) {
-          const svc = data[`service_${n}`];
-          if (svc) list.push(typeof svc === "string" ? JSON.parse(svc) : svc);
-        }
-        if (list.length > 0) setServices(list);
-      });
-  }, []);
+useEffect(() => {
+  fetchWithCache("services_content", () =>
+    new Promise((resolve) => {
+      supabase.from("services_content").select("*").eq("id", 1).single()
+        .then(({ data }) => resolve(data));
+    })
+  ).then((data: any) => {
+    if (!data) return;
+    if (data.section_heading) setHeading(data.section_heading);
+    const list: ServiceItem[] = [];
+    for (let n = 1; n <= 4; n++) {
+      const svc = data[`service_${n}`];
+      if (svc) list.push(typeof svc === "string" ? JSON.parse(svc) : svc);
+    }
+    if (list.length > 0) setServices(list);
+  });
+}, []);
 
   return (
     <section className="bg-white px-6 md:px-16 lg:px-24 py-20">

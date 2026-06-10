@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Play, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
+import { fetchWithCache } from "@/lib/cms-cache";
 import { supabase } from "@/lib/supabase";
 
 type Data = Record<string, string>;
@@ -33,18 +34,21 @@ export default function VideoTestimonialCTA() {
   const [d, setD] = useState<Data>(fallback);
   const [playing, setPlaying] = useState(false);
 
-  useEffect(() => {
-    supabase
-      .from("testimonials_page_content")
-      .select(
-        "video_label,video_heading,video_subtext,video_button_text,video_image_url,video_duration,video_type,video_url,video_file_url",
-      )
-      .eq("id", 1)
-      .single()
-      .then(({ data }) => {
-        if (data) setD({ ...fallback, ...data });
-      });
-  }, []);
+useEffect(() => {
+  fetchWithCache("testimonials_page", () =>
+    new Promise((resolve) => {
+      supabase.from("testimonials_page_content").select("*").eq("id", 1).single()
+        .then(({ data }) => resolve(data));
+    })
+  ).then((data: any) => {
+    if (data) {
+      const cleaned = Object.fromEntries(
+        Object.entries(data).filter(([_, v]) => v !== null && v !== "")
+      ) as Data;
+      setD((prev) => ({ ...prev, ...cleaned }));
+    }
+  });
+}, []);
 
   const embedUrl =
     d.video_type === "url" && d.video_url

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { fetchWithCache } from "@/lib/cms-cache";
 
 const fallbackTestimonials = [
   {
@@ -69,35 +70,35 @@ export default function TestimonialsGrid() {
   const [testimonials, setTestimonials] =
     useState<Testimonial[]>(fallbackTestimonials);
 
-  useEffect(() => {
-    supabase
-      .from("testimonials_page_content")
-      .select("*")
-      .eq("id", 1)
-      .single()
-      .then(({ data }) => {
-        if (!data) return;
-        if (data.grid_label) setLabel(data.grid_label);
-        if (data.grid_heading) setHeading(data.grid_heading);
-        const list: Testimonial[] = [];
-        for (let n = 1; n <= 6; n++) {
-          const name = data[`t${n}_name`];
-          const role = data[`t${n}_role`];
-          const quote = data[`t${n}_quote`];
-          const src = data[`t${n}_image`] || fallbackTestimonials[n - 1].src;
-          if (name || quote) {
-            list.push({
-              name: name || fallbackTestimonials[n - 1].name,
-              role: role || fallbackTestimonials[n - 1].role,
-              quote: quote || fallbackTestimonials[n - 1].quote,
-              src,
-              highlight: n === 2 || n === 5,
-            });
-          }
-        }
-        if (list.length > 0) setTestimonials(list);
-      });
-  }, []);
+useEffect(() => {
+  fetchWithCache("testimonials_page", () =>
+    new Promise((resolve) => {
+      supabase.from("testimonials_page_content").select("*").eq("id", 1).single()
+        .then(({ data }) => resolve(data));
+    })
+  ).then((data: any) => {
+    if (!data) return;
+    if (data.grid_label) setLabel(data.grid_label);
+    if (data.grid_heading) setHeading(data.grid_heading);
+    const list: Testimonial[] = [];
+    for (let n = 1; n <= 6; n++) {
+      const name = data[`t${n}_name`];
+      const role = data[`t${n}_role`];
+      const quote = data[`t${n}_quote`];
+      const src = data[`t${n}_image`] || fallbackTestimonials[n - 1].src;
+      if (name || quote) {
+        list.push({
+          name: name || fallbackTestimonials[n-1].name,
+          role: role || fallbackTestimonials[n-1].role,
+          quote: quote || fallbackTestimonials[n-1].quote,
+          src,
+          highlight: n === 2 || n === 5,
+        });
+      }
+    }
+    if (list.length > 0) setTestimonials(list);
+  });
+}, []);
 
   return (
     <section className="bg-[#F5F5F3] px-6 md:px-16 lg:px-24 py-24">
@@ -155,7 +156,7 @@ export default function TestimonialsGrid() {
               <p
                 className={`text-base font-semibold leading-relaxed mb-6 ${t.highlight ? "text-black" : "text-black/80"}`}
               >
-                "{t.quote}"
+                {t.quote}
               </p>
               <div className="flex items-center gap-3">
                 <img
